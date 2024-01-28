@@ -29,6 +29,29 @@ async def process_start_command(message: Message):
     )
 
 
+@dp.message(F.text == 'Остановить диалог')
+async def process_stop_dialog(message: Message):
+    chat_info = await db.get_active_chat(message.chat.id)
+    print(chat_info)
+    if chat_info:
+        db.delete_chat(chat_info[0])
+        await bot.send_message(
+            message.chat.id,
+            "Вы покинули чат",
+            reply_markup=keyboard_before_start_search,
+        )
+        await bot.send_message(
+            chat_info[1],
+            "Собеседник покинул чат",
+            reply_markup=keyboard_before_start_search
+        )
+    else:
+        await message.answer(
+            'Вы не находитесь в диалоге',
+            reply_markup=keyboard_before_start_search
+        )
+
+
 @dp.message(F.text == '😎 Поиск собеседника')
 async def process_start_search_command(message: Message):
     chat_two = await db.get_chat()  # берем собеседника, который стоит первый в очереди
@@ -38,6 +61,7 @@ async def process_start_search_command(message: Message):
             'Ищем собеседника...',
             reply_markup=keyboard_after_start_research
         )
+
     else:
         mess = "Собеседник найден!,\nЧтобы остановить диалог напишите /stop"
         await bot.send_message(
@@ -60,6 +84,14 @@ async def process_finish_search_command(message: Message):
         'Поиск отменён',
         reply_markup=keyboard_before_start_search
     )
+
+
+@dp.message()
+async def process_chatting(message: Message):
+    chat_info = await db.get_active_chat(message.chat.id)
+    print(chat_info)
+    if chat_info:
+        await bot.send_message(chat_info[1], message.text)
 
 
 if __name__ == '__main__':

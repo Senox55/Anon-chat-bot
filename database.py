@@ -21,6 +21,9 @@ class Database:
     async def delete_queue(self, chat_id):
         return self.cursor.execute(f"DELETE FROM `queue` WHERE `chat_id` = {chat_id}")
 
+    async def delete_chat(self, id_chat):
+        return self.cursor.execute(f"DELETE FROM `chats` WHERE `id` = {id_chat}")
+
     async def get_chat(self):
         self.cursor.execute("SELECT * FROM `queue`")
         chat = self.cursor.fetchmany(1)
@@ -41,3 +44,24 @@ class Database:
         else:
             # Становимся в очередь
             return False
+
+    async def get_active_chat(self, chat_id):
+        self.cursor.execute(f"SELECT * FROM `chats` WHERE `chat_one` = {chat_id}")
+        chat = self.cursor.fetchall()
+        id_chat = 0
+        for row in chat:
+            print(row)
+            id_chat = row['id']
+            chat_info = [row['id'], row['chat_two']]
+        if id_chat == 0:
+            self.cursor.execute(f"SELECT * FROM `chats` WHERE `chat_two` = {chat_id}")
+            chat = self.cursor.fetchall()
+            for row in chat:
+                id_chat = row['id']
+                chat_info = [row['id'], row['chat_one']]
+            if id_chat == 0:
+                return False
+            else:
+                return chat_info
+        else:
+            return chat_info
