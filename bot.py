@@ -34,7 +34,7 @@ async def process_stop_dialog(message: Message):
     chat_info = await db.get_active_chat(message.chat.id)
     print(chat_info)
     if chat_info:
-        db.delete_chat(chat_info[0])
+        await db.delete_chat(chat_info[0])
         await bot.send_message(
             message.chat.id,
             "Вы покинули чат",
@@ -91,7 +91,12 @@ async def process_chatting(message: Message):
     chat_info = await db.get_active_chat(message.chat.id)
     print(chat_info)
     if chat_info:
-        await bot.send_message(chat_info[1], message.text)
+        await message.send_copy(chat_id=chat_info[1])
+    else:
+        await message.answer(
+            'Вы еще не начали диалог',
+            reply_markup=keyboard_before_start_search
+        )
 
 
 if __name__ == '__main__':
