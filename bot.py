@@ -8,13 +8,15 @@ BOT_TOKEN = '6783993214:AAEo0dxpvyjQy4ifGUabn23rDnT0j7EmtF8'
 bot = Bot(token=BOT_TOKEN)
 dp = Dispatcher()
 
-db = Database('my_db.mwb')
+db = Database()
 
 button_start_search = KeyboardButton(text='😎 Поиск собеседника')
 button_stop_search = KeyboardButton(text='❌ Остановить поиск собеседника')
+button_stop_dialog = KeyboardButton(text='Остановить диалог')
 
 keyboard_before_start_search = ReplyKeyboardMarkup(keyboard=[[button_start_search]], resize_keyboard=True)
 keyboard_after_start_research = ReplyKeyboardMarkup(keyboard=[[button_stop_search]], resize_keyboard=True)
+keyboard_after_find_dialog = ReplyKeyboardMarkup(keyboard=[[button_stop_dialog]], resize_keyboard=True)
 
 
 @dp.message(CommandStart())
@@ -29,11 +31,35 @@ async def process_start_command(message: Message):
 
 @dp.message(F.text == '😎 Поиск собеседника')
 async def process_start_search_command(message: Message):
+    chat_two = await db.get_chat()  # берем собеседника, который стоит первый в очереди
+    if not await(db.create_chat(message.chat.id, chat_two)):
+        await db.add_queue(message.chat.id)
+        await message.answer(
+            'Ищем собеседника...',
+            reply_markup=keyboard_after_start_research
+        )
+    else:
+        mess = "Собеседник найден!,\nЧтобы остановить диалог напишите /stop"
+        await bot.send_message(
+            message.chat.id,
+            mess,
+            reply_markup=keyboard_after_find_dialog
+        )
+
+        await bot.send_message(
+            chat_two,
+            mess,
+            reply_markup=keyboard_after_find_dialog
+        )
+
+
+@dp.message(F.text == '❌ Остановить поиск собеседника')
+async def process_finish_search_command(message: Message):
+    await db.delete_queue(message.chat.id)
     await message.answer(
-        'Ищем собеседника...',
-        reply_markup=keyboard_after_start_research
+        'Поиск отменён',
+        reply_markup=keyboard_before_start_search
     )
-    db.add_queue(message.chat.id)
 
 
 if __name__ == '__main__':
